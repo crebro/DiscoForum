@@ -1,6 +1,8 @@
 import sqlite3
 import datetime
+from sqlite3.dbapi2 import Cursor
 from dotenv import dotenv_values
+from flask_discord.models.user import User
 
 config = dotenv_values('.env')
 
@@ -38,7 +40,9 @@ def createAnswersTable(connection: sqlite3.Connection):
             id INTEGER NOT NULL PRIMARY KEY,
             answer varchar(512),
             answered_by varchar(255),
-            answered_date datetime
+            votes INTEGER DEFAULT 0,
+            answered_date datetime,
+            question_id INTEGER
         );
     """)
     cur.close()
@@ -52,6 +56,9 @@ def createUsersTable(connection: sqlite3.Connection):
     )
     """)
     cur.close()
+
+def getCurrentTime():
+    return datetime.datetime.now().strftime(config['DATETIME_FORMAT'])
 
 def deleteTables(connection: sqlite3.Connection):
     cur = connection.cursor()
@@ -87,13 +94,13 @@ def updateServerPrefix(connection: sqlite3.Connection, server_id, server_prefix)
 def createQuestion(connection: sqlite3.Connection, question, asked_by, server_id ):
     cur = connection.cursor()
     cur.execute(f"""
-        INSERT INTO questions ( question, server_id, asked_by, asked_date ) VALUES ( '{question}', '{server_id}', '{asked_by}', '{datetime.datetime.now().strftime(config['DATETIME_FORMAT'])}' );
+        INSERT INTO questions ( question, server_id, asked_by, asked_date ) VALUES ( '{question}', '{server_id}', '{asked_by}', '{getCurrentTime()}' );
     """)
     connection.commit()
     cur.execute("""
         SELECT last_insert_rowid();
     """)
-    questionId = cur.fetchone()
+    questionId = cur.fetchone()[0]
     cur.close()
     return questionId
 
@@ -112,7 +119,13 @@ def getQuestion(connection: sqlite3.Connection, question_id):
         'asked_date': datetime.datetime.strptime(question[4], config['DATETIME_FORMAT']),
     }
 
-def getAnswersForQuestion(conection: sqlite3.Connection, question_id):
+def createAnswer(connection: sqlite3.Connection, question_id, answer, answered_by): 
+    cur = connection.cursor()
+    cur.execute(f"""INSERT INTO answeres (question_id, answer answered_by, answered_date ) VALUES ('{question_id}', '{answer}', '{answered_by}', {getCurrentTime()});
+    """)
+    connection.commit()
+
+def getAnswersForQuestion(connection: sqlite3.Connection, question_id):
     cur = connection.cursor()
     cur.execute(f"""
         SELECT * FROM answers WHERE question_id={question_id};
@@ -123,19 +136,63 @@ def getAnswersForQuestion(conection: sqlite3.Connection, question_id):
         return {
             'id': answer[0],
             'answer': answer[1],
-            'answered_by': answer[2]
+            'answered_by': answer[2],
+            'votes': answer[3],
+            'answered_date': answer[4],
         }
 
     return list(map(mapping, answers))
-    
-# def serachQuestions(connection: sqlite3.Connection, query, sever_id):
 
+def getUser(connection: sqlite3.Connection, user_id):
+    cur = connection.cursor()
+    cur.execute(f"""
+        SELECT * FROM users WHERE user_id={user_id}
+    """)
+    user = cur.fetchone()
+    cur.close()
+    return {
+        'id': user[0],
+        'name': user[1],
+        'token': user[2],
+    }
+
+def getUserWithToken(connection: sqlite3.Connection, token):
+    cur = connection.cursor()
+    cur.execute(f"""
+        SELECT * FROM users WHERE login_token={token}
+    """)
+    user = cur.fetchone()
+    cur.close()
+    return user
+
+def createUser(connection: sqlite3.Connection, user_id, token):
+    user = getUser(connection, user_id)
+    print(user)
+    if user:
+        return user
+    cur = connection.cursor()
+    cur.execute(f"""
+        INSERT INTO users ( user_id, login_token ) VALUES ('{user_id}', '{token}');
+    """)
+    connection.commit()
+    cur.execute("SELECT last_insert_rowid();")
+    userId = cur.fetchone()[0]
+    user = getUser(connection, userId )
+    cur.close()
+    return user
+
+def dropAllTables(connection: sqlite3.Connection, tables: list):
+    cursor = connection.cursor()
+    for table in tables:
+        cursor.execute(f'DROP TABLE {table}')
+    cursor.close()
 
 if __name__ == "__main__":
     connection = create_connection("database.db")    
-    # createServersTable(connection)
-    # createQuestionsTable(connection)
-    # createAnswersTable(connection)
+    dropAllTables(connection, ['servers', 'questions', 'answers', 'users'])
+    createServersTable(connection)
+    createQuestionsTable(connection)
+    createAnswersTable(connection)
     createUsersTable(connection)
     connection.close()
 

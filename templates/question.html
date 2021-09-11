@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='allPageStyling.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='questionPageStyling.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='discoLogin.css') }}">
+    {% if data['auth_user'] %}
+    <script src="https://cdn.tiny.cloud/1/fid1zwj3enl8p038im5jpqo31s5nd1v2320avv0cj3b36y5m/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+    {% endif %}
+
 </head>
 <body>
     <div class="page">
@@ -25,16 +29,34 @@
             </div>
 
             <div class="answers">
+
+                {% if not(data['auth_user']) %}
                 <div class="haveAnAnswerText">
                     Have an Answer for this Question? Log in below and Answer this question
-                    <a class="loginContainer"  href="/login">
-                        <i class="fab fa-discord loginIcon"></i>
-                        Log in
-                    </a>
+                        <a class="loginContainer"  href="/login">
+                            <i class="fab fa-discord loginIcon"></i>
+                            Log in
+                        </a>
                 </div>
+                {% else %}
+                Have an Answer for this Question? Write an Answer so others can know
+                <div class="answerWritingArea" >
+                    <textarea ></textarea>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    {% if data['auth_user'] %}
+        <script>
+            tinymce.init({
+            selector: 'textarea',
+            plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+            toolbar_mode: 'floating',
+        });
+        </script>
+    {% endif %}
 
     <script src="https://kit.fontawesome.com/b918b909c6.js" crossorigin="anonymous"></script>
 

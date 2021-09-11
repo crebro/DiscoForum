@@ -24,10 +24,17 @@
   border-radius: 50%;
 }
 
-.haveAnAnswerText {
+.answers {
   margin-top: 20px;
+}
+
+.haveAnAnswerText {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
+}
+
+.answerWritingArea {
+  margin-top: 10px;
 }

@@ -51,7 +51,7 @@ class BotClient(discord.Client):
         splitMessage = messageContent.split(" ", 1)
         question = splitMessage[1]
         try:
-            questionID = createQuestion(self.dbconnection, question, message.author.id, serverId)[0]
+            questionID = createQuestion(self.dbconnection, question, message.author.id, serverId)
             now = datetime.datetime.now()
             questionEmbed = discord.Embed(title=f"Question by {message.author.display_name}", description=f"Question: {question}",)
             questionEmbed.set_footer(text=f"Asked Date: {now.year}-{now.month}-{now.day}")
