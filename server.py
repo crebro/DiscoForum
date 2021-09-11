@@ -1,7 +1,7 @@
 import sqlite3
 import os
-from databaseconfig import createUser, getQuestion
-from flask import Flask, render_template, redirect, url_for, session
+from databaseconfig import createAnswer, createUser, getAnswersForQuestion, getQuestion
+from flask import Flask, render_template, redirect, url_for, session, request
 from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from dotenv import dotenv_values
 import requests
@@ -68,16 +68,33 @@ def singleQuestion(id):
     question = getQuestion(dbConnection, id)
     questionAskedBy = getDiscordUser(question['asked_by'])
     authUser = None
+    answers = getAnswersForQuestion(dbConnection, question['id'])
     if 'DISCORD_USER_ID' in session:
         authUser = getDiscordUser(session['DISCORD_USER_ID'])
+
+    def mapAnswers(answer):
+        temp = answer
+        temp['answered_by'] = getDiscordUser(temp['answered_by'])
+        return temp
 
     data = {
         'question': question,
         'asked_by': questionAskedBy,
         'auth_user': authUser,
+        'answers': list(map(mapAnswers, answers))
     }
     dbConnection.close()
     return render_template('question.html', data=data)
+
+@app.route("/questions/<int:id>/answer", methods=['POST'])
+def submitAnswerToQuestion(id):
+    if not( 'answer' in request.form ) or not('DISCORD_USER_ID' in session):
+        return redirect(url_for("singleQuestion", id=id))
+    answerContent = request.form.get('answer')
+    dbConnection = sqlite3.connect("database.db")
+    loggedInUser = session['DISCORD_USER_ID']
+    createAnswer(dbConnection, id, answerContent, loggedInUser)
+    return redirect(url_for("singleQuestion", id=id))
 
 @app.route("/recieve_session")
 def recieveSession():

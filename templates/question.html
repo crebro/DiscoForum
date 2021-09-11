@@ -29,7 +29,22 @@
             </div>
 
             <div class="answers">
+                <div class="answersList">
+                    {% for answer in data['answers']  %}
+                        <div class="answer">
+                            <img class="answerUserImage" src="https://cdn.discordapp.com/avatars/{{ answer['answered_by']['id'] }}/{{ answer['answered_by']['avatar'] }}.png?size=256" />
+                            <div class="answerSection">
+                                    <span class="answeredBy"> {{ answer['answered_by']['username'] }} </span>
+                                    <span class="answeredDate"> {{ data['question']['asked_date'].strftime("%d/%m/%y") }} </span>
+                                <div class="answerText">
+                                    {{ answer['answer']|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
 
+                
                 {% if not(data['auth_user']) %}
                 <div class="haveAnAnswerText">
                     Have an Answer for this Question? Log in below and Answer this question
@@ -39,9 +54,15 @@
                         </a>
                 </div>
                 {% else %}
-                Have an Answer for this Question? Write an Answer so others can know
-                <div class="answerWritingArea" >
-                    <textarea ></textarea>
+                <div class="haveAnAnswerLoggedIn">
+
+                    Have an Answer for this Question? Write an Answer so others can know
+                    <div class="answerWritingArea" >
+                        <form action="/questions/{{ data['question']['id'] }}/answer" method="post">
+                            <textarea name="answer" ></textarea>
+                            <button type="submit" class="formSubmitButton"> Submit Your Answer </button>
+                        </form>
+                    </div>
                 </div>
                 {% endif %}
             </div>
