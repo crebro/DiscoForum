@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans&display=swap');
+
+* {
+  padding: 0;
+  margin: 0;
+}
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgb(32, 34, 37);
+  color: white;
+  font-family: 'Nunito Sans';
+}

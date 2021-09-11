@@ -1,0 +1,33 @@
+.question {
+  padding: 20px;
+  border-radius: 10px;
+  background-color: rgb(24, 24, 29);
+}
+
+.questionTitle {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.questionAsked {
+  font-size: 30px;
+}
+
+.questionTitleFlex {
+  display: flex;
+  align-items: center;
+}
+
+.questionTitleAskedBy {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.haveAnAnswerText {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}

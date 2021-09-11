@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> DiscoForum - {{ data['question']['question'] }} </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='allPageStyling.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='questionPageStyling.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='discoLogin.css') }}">
+</head>
+<body>
+    <div class="page">
+        <div class="question">
+            <div class="questionTitleFlex">
+                <img class="questionTitleAskedBy" src="https://cdn.discordapp.com/avatars/{{ data['asked_by']['id'] }}/{{ data['asked_by']['avatar'] }}.png?size=256" />
+                <div class="questionTitle">
+                    <div class="questionAsked">
+                        {{ data['question']['question'] }} 
+                    </div>
+                    <div class="questionAskedDate">
+                        Asked On: {{ data['question']['asked_date'].strftime("%d/%m/%y") }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="answers">
+                <div class="haveAnAnswerText">
+                    Have an Answer for this Question? Log in below and Answer this question
+                    <a class="loginContainer"  href="/login">
+                        <i class="fab fa-discord loginIcon"></i>
+                        Log in
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/b918b909c6.js" crossorigin="anonymous"></script>
+
+</body>
+</html>

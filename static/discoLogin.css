@@ -1,0 +1,21 @@
+.loginContainer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px 10px 20px;
+  background-color: #5865f2;
+  border-radius: 10px;
+  transition-duration: 250ms;
+  text-decoration: none;
+  color: white;
+}
+
+.loginIcon {
+  margin-right: 5px;
+}
+
+.loginContainer:hover {
+  cursor: pointer;
+  background-color: #3644dd;
+}
