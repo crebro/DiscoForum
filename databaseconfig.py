@@ -45,7 +45,7 @@ def createAnswersTable(connection: sqlite3.Connection):
     cur.execute(
         """CREATE TABLE answers (
             id INTEGER NOT NULL PRIMARY KEY,
-            answer varchar(512),
+            answer TEXT,
             answered_by varchar(255),
             votes INTEGER DEFAULT 0,
             answered_date datetime,
@@ -62,7 +62,8 @@ def createUsersTable(connection: sqlite3.Connection):
         """CREATE TABLE users (
         id INTEGER NOT NULL PRIMARY KEY,
         user_id varchar(255),
-        login_token varchar(255) 
+        avatar varchar(255),
+        username varchar(255)
     )
     """
     )
@@ -169,10 +170,12 @@ def getAnswersForQuestion(connection: sqlite3.Connection, question_id):
     cur.close()
 
     def mapping(answer):
+        # Getting the data of the person who answered
+        answered_by = getUserWithDiscordId(connection, answer[2])
         return {
             "id": answer[0],
             "answer": answer[1],
-            "answered_by": answer[2],
+            "answered_by": answered_by,
             "votes": answer[3],
             "answered_date": answer[4],
         }
@@ -190,34 +193,42 @@ def getUser(connection: sqlite3.Connection, user_id):
     )
     user = cur.fetchone()
     cur.close()
-    return {
-        "id": user[0],
-        "name": user[1],
-        "token": user[2],
-    }
+    if user:
+        return {
+            "id": user[0],
+            "user_id": user[1],
+            "avatar": user[2],
+            "username": user[3],
+        }
+    return None
 
 
-def getUserWithToken(connection: sqlite3.Connection, token):
+def getUserWithDiscordId(connection: sqlite3.Connection, user_id):
     cur = connection.cursor()
-    cur.execute("SELECT * FROM users WHERE login_token=?", (token))
+    cur.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     user = cur.fetchone()
     cur.close()
-    return user
+    if user:
+        return {
+            "id": user[0],
+            "user_id": user[1],
+            "avatar": user[2],
+            "username": user[3],
+        }
+    return None
 
 
-def createUser(connection: sqlite3.Connection, user_id, token):
+def createUser(connection: sqlite3.Connection, user_id, avatar, username):
     user = getUser(connection, user_id)
-    print(user)
     if user:
         return user
     cur = connection.cursor()
     cur.execute(
-        "INSERT INTO users ( user_id, login_token ) VALUES (?, ?);", (user_id, token)
+        "INSERT INTO users ( user_id, avatar, username ) VALUES (?, ?, ?);",
+        (user_id, avatar, username),
     )
     connection.commit()
-    cur.execute("SELECT last_insert_rowid();")
-    userId = cur.fetchone()[0]
-    user = getUser(connection, userId)
+    user = getUser(connection, user_id)
     cur.close()
     return user
 
