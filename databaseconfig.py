@@ -74,6 +74,11 @@ def getCurrentTime():
     return datetime.datetime.now().strftime(config["DATETIME_FORMAT"])
 
 
+def nowTimeSeconds():
+    now = datetime.datetime.now()
+    return now.timestamp()
+
+
 def addServerRow(connection: sqlite3.Connection, server_id, server_prefix):
     cur = connection.cursor()
     cur.execute(
@@ -151,11 +156,27 @@ def getQuestion(connection: sqlite3.Connection, question_id):
 
 def createAnswer(connection: sqlite3.Connection, question_id, answer, answered_by):
     cur = connection.cursor()
+    nowSeconds = nowTimeSeconds()
     cur.execute(
         "INSERT INTO answers (question_id, answer, answered_by, answered_date ) VALUES (?, ?, ?, ?);",
-        (question_id, answer, answered_by, getCurrentTime()),
+        (question_id, answer, answered_by, nowSeconds),
     )
     connection.commit()
+    cur.execute(
+        """
+        SELECT last_insert_rowid();
+    """
+    )
+    answerId = cur.fetchone()[0]
+    answered_by = getUserWithDiscordId(connection, answered_by)
+    cur.close()
+    return {
+        "id": answerId,
+        "answer": answer,
+        "answered_by": answered_by,
+        "votes": 0,
+        "answered_date": nowSeconds,
+    }
 
 
 def getAnswersForQuestion(connection: sqlite3.Connection, question_id):

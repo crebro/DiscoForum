@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from databaseconfig import createAnswer, createUser, getAnswersForQuestion, getQuestion
-from flask import Flask, render_template, redirect, url_for, session, request
+from flask import Flask, render_template, redirect, url_for, session, request, jsonify
 from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from dotenv import dotenv_values
 import requests
@@ -63,13 +63,20 @@ def redirect_unauthorized(e):
     return redirect(url_for("login"))
 
 
+@app.route("/api/questions/<int:id>/answers")
+def getAnswersToQuestion(id):
+    dbConnection = sqlite3.connect("database.db")
+    answers = getAnswersForQuestion(dbConnection, id)
+    return jsonify(answers)
+
+
 @app.route("/questions/<int:id>")
 def singleQuestion(id):
     dbConnection = sqlite3.connect("database.db")
     question = getQuestion(dbConnection, id)
     questionAskedBy = getDiscordUser(question["asked_by"])
     authUser = None
-    answers = getAnswersForQuestion(dbConnection, question["id"])
+    # answers = getAnswersForQuestion(dbConnection, question["id"])
     if "DISCORD_USER_ID" in session:
         authUser = getDiscordUser(session["DISCORD_USER_ID"])
 
@@ -77,7 +84,8 @@ def singleQuestion(id):
         "question": question,
         "asked_by": questionAskedBy,
         "auth_user": authUser,
-        "answers": answers,
+        "socket_address": config["SOCKET_ADDRESS"]
+        # "answers": answers,
     }
     dbConnection.close()
     return render_template("question.html", data=data)
@@ -85,13 +93,15 @@ def singleQuestion(id):
 
 @app.route("/questions/<int:id>/answer", methods=["POST"])
 def submitAnswerToQuestion(id):
-    if not ("answer" in request.form) or not ("DISCORD_USER_ID" in session):
+    data = request.get_json()
+    if not ("answer" in data) or not ("DISCORD_USER_ID" in session):
         return redirect(url_for("singleQuestion", id=id))
-    answerContent = request.form.get("answer")
+    answerContent = data["answer"]
     dbConnection = sqlite3.connect("database.db")
     loggedInUser = session["DISCORD_USER_ID"]
-    createAnswer(dbConnection, id, answerContent, loggedInUser)
-    return redirect(url_for("singleQuestion", id=id))
+    answer = createAnswer(dbConnection, id, answerContent, loggedInUser)
+    dbConnection.close()
+    return jsonify(answer)
 
 
 @app.route("/recieve_session")

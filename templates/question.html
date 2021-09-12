@@ -29,21 +29,9 @@
             </div>
 
             <div class="answers">
-                <div class="answersList">
-                    {% for answer in data['answers']  %}
-                        <div class="answer">
-                            <img class="answerUserImage" src="https://cdn.discordapp.com/avatars/{{ answer['answered_by']['user_id'] }}/{{ answer['answered_by']['avatar'] }}.png?size=256" />
-                            <div class="answerSection">
-                                    <span class="answeredBy"> {{ answer['answered_by']['username'] }} </span>
-                                    <span class="answeredDate"> {{ data['question']['asked_date'].strftime("%d/%m/%y") }} </span>
-                                <div class="answerText">
-                                    {{ answer['answer']|safe }}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
+                <div class="answersList" id="answersList">
+                    <img src="{{ url_for('static', filename='images/loading-wedges.gif') }}" alt="Loading Gif">
                 </div>
-
                 
                 {% if not(data['auth_user']) %}
                 <div class="haveAnAnswerText">
@@ -58,10 +46,8 @@
 
                     Have an Answer for this Question? Write an Answer so others can know
                     <div class="answerWritingArea" >
-                        <form action="/questions/{{ data['question']['id'] }}/answer" method="post">
-                            <textarea name="answer" ></textarea>
-                            <button type="submit" class="formSubmitButton"> Submit Your Answer </button>
-                        </form>
+                        <textarea name="answer" id="textareaAnswer" ></textarea>
+                        <button type="submit" class="formSubmitButton" id="formSubmitButton"> Submit Your Answer </button>
                     </div>
                 </div>
                 {% endif %}
@@ -72,7 +58,7 @@
     {% if data['auth_user'] %}
         <script>
             tinymce.init({
-            selector: 'textarea',
+            selector: '#textareaAnswer',
             plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
             toolbar_mode: 'floating',
         });
@@ -80,6 +66,82 @@
     {% endif %}
 
     <script src="https://kit.fontawesome.com/b918b909c6.js" crossorigin="anonymous"></script>
+            
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>    <script>
+        const answersList = document.getElementById('answersList');
+        axios.get("/api/questions/{{ data['question']['id'] }}/answers").then((response) => {
+            var htmlContent = "";
+            response.data.forEach(answer => {
+                var answeredTime = new Date(answer.answered_date * 1000);
+                const full_date = answeredTime.toLocaleDateString();
+                const full_time = answeredTime.toLocaleTimeString();
+                htmlContent = htmlContent + `
+                <div class="answer">
+                    <img class="answerUserImage" src="https://cdn.discordapp.com/avatars/${answer.answered_by.user_id}/${answer.answered_by.avatar}.png?size=256" />
+                    <div class="answerSection">
+                        <span class="answeredBy"> ${answer.answered_by.username} </span>
+                        <span class="answeredDate"> ${full_date} at ${full_time} </span>
+                        <div class="answerText">
+                            ${answer.answer}
+                            </div>
+                            </div>
+                            </div>
+                            `;
+                        });
+                        answersList.innerHTML = htmlContent;
+            });
+                    
+        {% if data['auth_user'] %}
+        var socket = io.connect("{{ data['socket_address'] }}")
+        const formSubmitButton = document.getElementById("formSubmitButton");
+        const roomId = "{{ data['question']['id'] }}-{{ data['question']['asked_by']}}-{{ data['question']['server_id'] }}"
+
+        socket.on('connect', function () {
+            function submit() {
+                var answer = tinymce.get("textareaAnswer").getContent();
+                tinymce.get("textareaAnswer").setContent('');
+                axios.post("/questions/{{ data['question']['id'] }}/answer", {
+                    answer: answer,
+                }).then((response) => {
+                        console.log(response);
+                        socket.emit("send_message", {
+                            answer: response.data,
+                            questionRoomID: roomId
+                    })
+                })
+            }
+        
+            formSubmitButton.addEventListener("click", submit)
+            
+            socket.on('recieve_mesage', function (message) {
+                if (message.questionRoomID == roomId) {
+                    var answer = message.answer;
+                    var answeredTime = new Date(answer.answered_date * 1000);
+                    const full_date = answeredTime.toLocaleDateString();
+                    const full_time = answeredTime.toLocaleTimeString();
+                    const newElement = document.createElement("div");
+                    newElement.innerHTML = `
+                        <div class="answer">
+                            <img class="answerUserImage" src="https://cdn.discordapp.com/avatars/${answer.answered_by.user_id}/${answer.answered_by.avatar}.png?size=256" />
+                            <div class="answerSection">
+                                <span class="answeredBy"> ${answer.answered_by.username} </span>
+                                <span class="answeredDate"> ${full_date} at ${full_time} </span>
+                            <div class="answerText">
+                                ${answer.answer}
+                            </div>
+                            </div>
+                        </div>
+                    `;
+                    answersList.appendChild(newElement);
+                }
+            } )
+                
+        })
+        {% endif %}
+    </script>
+
 
 </body>
 </html>
