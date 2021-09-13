@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Disco Forum - Home </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='allPageStyling.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='homeScreen.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='discoLogin.css') }}">
+</head>
+<body>
+    <div class="page">
+        <div class="home">
+            <div class="homeTitleFlex">
+                <img class="homeUserImage" src="{{ url_for('static', filename="images/discoforum.png") }}" />
+                <div class="homeTitle">
+                    Welcome to Disco Forum 
+                </div>
+            </div>
+
+            <div class="home-features">
+                Answer Questions and get your questions answered too, help grow your community
+                <a class="loginContainer"  href="{{ data['add_to_server'] }}">
+                    <i class="fab fa-discord loginIcon"></i>
+                    Add to Server
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://kit.fontawesome.com/b918b909c6.js" crossorigin="anonymous"></script>
+
+</body>
+</html>

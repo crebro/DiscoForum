@@ -81,6 +81,10 @@ def nowTimeSeconds():
 
 def addServerRow(connection: sqlite3.Connection, server_id, server_prefix):
     cur = connection.cursor()
+    cur.execute("SELECT * FROM servers WHERE server_id=?", (server_id,))
+    if cur.fetchone():
+        cur.close()
+        return
     cur.execute(
         "INSERT INTO servers ( server_id, server_bot_prefix ) VALUES ( ?, ? )",
         (server_id, server_prefix),

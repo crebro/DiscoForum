@@ -38,7 +38,8 @@ def getDiscordUser(id):
 
 @app.route("/")
 def home():
-    return "hello there"
+    data = {"add_to_server": config["BOT_TO_SERVER"]}
+    return render_template("home.html", data=data)
 
 
 @app.route("/login/")
