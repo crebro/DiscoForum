@@ -1,3 +1,4 @@
+from discord import message
 from flask.helpers import make_response
 from flask_socketio import SocketIO
 import string
@@ -30,7 +31,16 @@ def socketIOEndpoint():
 def handleMessageSend(
     json,
 ):
+    returningMessage = json
+    returningMessage["answer"]["user_has_voted"] = False
     socketio.emit("recieve_mesage", json)
+
+
+@socketio.on("upvote")
+def handleUpvoteSend(
+    json,
+):
+    socketio.emit("upvote", json)
 
 
 if __name__ == "__main__":

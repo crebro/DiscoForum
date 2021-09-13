@@ -1,5 +1,9 @@
+from collections import UserDict
 import sqlite3
 import datetime
+from sqlite3.dbapi2 import Cursor
+from typing import Tuple
+from discord.message import convert_emoji_reaction
 from dotenv import dotenv_values
 
 config = dotenv_values(".env")
@@ -64,6 +68,18 @@ def createUsersTable(connection: sqlite3.Connection):
         user_id varchar(255),
         avatar varchar(255),
         username varchar(255)
+    )
+    """
+    )
+    cur.close()
+
+
+def createUserAnswerVotesTable(connection: sqlite3.Connection):
+    cur = connection.cursor()
+    cur.execute(
+        """CREATE TABLE user_answer_votes (
+        user_id INTEGER NOT NULL,
+        answer_id INTEGER NOT NULL
     )
     """
     )
@@ -206,7 +222,9 @@ def searchQuestionsInDatabase(connection: sqlite3.Connection, query, serverId):
     return list(map(mapQuestions, questions))
 
 
-def getAnswersForQuestion(connection: sqlite3.Connection, question_id):
+def getAnswersForQuestion(
+    connection: sqlite3.Connection, question_id, viewing_user_id, authenticated
+):
     cur = connection.cursor()
     cur.execute(
         """
@@ -215,20 +233,32 @@ def getAnswersForQuestion(connection: sqlite3.Connection, question_id):
         (question_id,),
     )
     answers = cur.fetchall()
-    cur.close()
 
     def mapping(answer):
         # Getting the data of the person who answered
         answered_by = getUserWithDiscordId(connection, answer[2])
+        userHasVoted = False
+
+        if authenticated:
+            cur.execute(
+                "SELECT * FROM user_answer_votes WHERE user_id=? AND answer_id=?",
+                (viewing_user_id, answer[0]),
+            )
+            vote = cur.fetchone()
+            if vote:
+                userHasVoted = True
         return {
             "id": answer[0],
             "answer": answer[1],
             "answered_by": answered_by,
             "votes": answer[3],
             "answered_date": answer[4],
+            "user_has_voted": userHasVoted,
         }
 
-    return list(map(mapping, answers))
+    answers = list(map(mapping, answers))
+    cur.close()
+    return answers
 
 
 def getUser(connection: sqlite3.Connection, user_id):
@@ -281,6 +311,36 @@ def createUser(connection: sqlite3.Connection, user_id, avatar, username):
     return user
 
 
+def addVote(connection: sqlite3.Connection, answer_id, user_id):
+    cur = connection.cursor()
+    cur.execute(
+        "SELECT * FROM user_answer_votes WHERE answer_id=? AND user_id=?",
+        (answer_id, user_id),
+    )
+    previousVote = cur.fetchone()
+    if previousVote:
+        return
+    cur.execute("UPDATE answers SET votes = votes + 1 WHERE id=?", (answer_id,))
+    cur.execute(
+        "INSERT into user_answer_votes (answer_id, user_id) VALUES (?, ?)",
+        (answer_id, user_id),
+    )
+    cur.execute("SELECT * FROM answers WHERE id=?", (answer_id,))
+    answer = cur.fetchone()
+    answered_by = getUserWithDiscordId(connection, answer[2])
+    answer = {
+        "id": answer[0],
+        "answer": answer[1],
+        "answered_by": answered_by,
+        "votes": answer[3],
+        "answered_date": answer[4],
+        "user_has_voted": True,
+    }
+    connection.commit()
+    cur.close()
+    return answer
+
+
 def dropAllTables(connection: sqlite3.Connection, tables: list):
     cursor = connection.cursor()
     for table in tables:
@@ -295,4 +355,5 @@ if __name__ == "__main__":
     createQuestionsTable(connection)
     createAnswersTable(connection)
     createUsersTable(connection)
+    createUserAnswerVotesTable(connection)
     connection.close()

@@ -1,7 +1,23 @@
+from collections import UserDict
 import sqlite3
 import os
-from databaseconfig import createAnswer, createUser, getAnswersForQuestion, getQuestion
-from flask import Flask, render_template, redirect, url_for, session, request, jsonify
+from databaseconfig import (
+    addVote,
+    createAnswer,
+    createUser,
+    getAnswersForQuestion,
+    getQuestion,
+)
+from flask import (
+    Flask,
+    json,
+    render_template,
+    redirect,
+    url_for,
+    session,
+    request,
+    jsonify,
+)
 from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from dotenv import dotenv_values
 import requests
@@ -64,10 +80,17 @@ def redirect_unauthorized(e):
     return redirect(url_for("login"))
 
 
-@app.route("/api/questions/<int:id>/answers")
-def getAnswersToQuestion(id):
+@app.route("/api/questions/<int:id>/answers/<int:viewer_id>")
+def getAnswersToQuestion(id, viewer_id):
     dbConnection = sqlite3.connect("database.db")
-    answers = getAnswersForQuestion(dbConnection, id)
+    answers = getAnswersForQuestion(dbConnection, id, viewer_id, authenticated=True)
+    return jsonify(answers)
+
+
+@app.route("/api/noauth/questions/<int:id>/answers/")
+def getAnwersToQuestionNoAuth(id):
+    dbConnection = sqlite3.connect("database.db")
+    answers = getAnswersForQuestion(dbConnection, id, None, authenticated=False)
     return jsonify(answers)
 
 
@@ -94,13 +117,28 @@ def singleQuestion(id, server_id, asked_by):
 def submitAnswerToQuestion(id):
     data = request.get_json()
     if not ("answer" in data) or not ("DISCORD_USER_ID" in session):
-        return redirect(url_for("singleQuestion", id=id))
+        return redirect(url_for("home"))
     answerContent = data["answer"]
     dbConnection = sqlite3.connect("database.db")
     loggedInUser = session["DISCORD_USER_ID"]
     answer = createAnswer(dbConnection, id, answerContent, loggedInUser)
     dbConnection.close()
     return jsonify(answer)
+
+
+@app.route("/api/answer/upvote/<int:answer_id>", methods=["POST"])
+def upvoteItem(answer_id):
+    if "DISCORD_USER_ID" not in session:
+        return redirect(url_for("home"))
+    dbConnection = sqlite3.connect("database.db")
+    loggedInUser = session["DISCORD_USER_ID"]
+    answer = addVote(dbConnection, answer_id, loggedInUser)
+    return jsonify(
+        {
+            "mesage": "Success",
+            "answer": answer,
+        }
+    )
 
 
 @app.route("/recieve_session")
