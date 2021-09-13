@@ -70,13 +70,12 @@ def getAnswersToQuestion(id):
     return jsonify(answers)
 
 
-@app.route("/questions/<int:id>")
-def singleQuestion(id):
+@app.route("/questions/<int:id>/<int:server_id>/<int:asked_by>")
+def singleQuestion(id, server_id, asked_by):
     dbConnection = sqlite3.connect("database.db")
-    question = getQuestion(dbConnection, id)
+    question = getQuestion(dbConnection, id, server_id, asked_by)
     questionAskedBy = getDiscordUser(question["asked_by"])
     authUser = None
-    # answers = getAnswersForQuestion(dbConnection, question["id"])
     if "DISCORD_USER_ID" in session:
         authUser = getDiscordUser(session["DISCORD_USER_ID"])
 
@@ -84,8 +83,7 @@ def singleQuestion(id):
         "question": question,
         "asked_by": questionAskedBy,
         "auth_user": authUser,
-        "socket_address": config["SOCKET_ADDRESS"]
-        # "answers": answers,
+        "socket_address": config["SOCKET_ADDRESS"],
     }
     dbConnection.close()
     return render_template("question.html", data=data)

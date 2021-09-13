@@ -133,13 +133,13 @@ def createQuestion(connection: sqlite3.Connection, question, asked_by, server_id
     return questionId
 
 
-def getQuestion(connection: sqlite3.Connection, question_id):
+def getQuestion(connection: sqlite3.Connection, question_id, server_id, asked_by):
     cur = connection.cursor()
     cur.execute(
         """
-        SELECT * FROM questions WHERE id=?;
+        SELECT * FROM questions WHERE id=? AND server_id=? AND asked_by=?;
     """,
-        (question_id,),
+        (question_id, server_id, asked_by),
     )
     question = cur.fetchone()
     cur.close()
@@ -177,6 +177,29 @@ def createAnswer(connection: sqlite3.Connection, question_id, answer, answered_b
         "votes": 0,
         "answered_date": nowSeconds,
     }
+
+
+def searchQuestionsInDatabase(connection: sqlite3.Connection, query, serverId):
+    cur = connection.cursor()
+    cur.execute(
+        "SELECT * FROM questions WHERE server_id = ? AND question LIKE ?",
+        (serverId, f"%{query}%"),
+    )
+    questions = cur.fetchall()
+    cur.close()
+
+    def mapQuestions(question):
+        return {
+            "id": question[0],
+            "question": question[1],
+            "server_id": question[2],
+            "asked_by": question[3],
+            "asked_date": datetime.datetime.strptime(
+                question[4], config["DATETIME_FORMAT"]
+            ),
+        }
+
+    return list(map(mapQuestions, questions))
 
 
 def getAnswersForQuestion(connection: sqlite3.Connection, question_id):

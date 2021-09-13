@@ -28,6 +28,13 @@
   margin-top: 20px;
 }
 
+.answersList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
 .haveAnAnswerText {
   margin-top: 10px;
   display: flex;
