@@ -21,3 +21,23 @@ python bot.py
 ```
 
 The server.py manages all the operations for the server and the bot.py contains the code required to run the bot
+
+## How to Use
+
+```
+.ask how to color html button
+```
+
+![Ask Questions](static/images/github/askquestion.JPG)
+
+### Login using Discord
+
+![Answer Questions](static/images/github/login_using_discord.JPG)
+
+### Answer Other's Questions
+
+![Answer Questions](static/images/github/answerquestions.JPG)
+
+### Search For Questions
+
+![Search For Questions](static/images/github/search_for_questions.JPG)
