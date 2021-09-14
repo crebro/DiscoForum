@@ -91,12 +91,11 @@
 
         function upVoteAnswer(answerIndex) {
             const answer = answers[answerIndex];
-            if (userIsAuthenitcated && !answer.user_has_voted ) {
-                axios.post(`/api/answer/upvote/${answer.id}`).then((response) => {
+            if (userIsAuthenitcated ) {
+                axios.post(`/api/answer/togglevote/${answer.id}`).then((response) => {
                     const answer = response.data.answer;
                     answers[answerIndex] = answer;
                     updateMessages();
-                    
                 })
             }
         }

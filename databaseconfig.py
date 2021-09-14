@@ -311,7 +311,7 @@ def createUser(connection: sqlite3.Connection, user_id, avatar, username):
     return user
 
 
-def addVote(connection: sqlite3.Connection, answer_id, user_id):
+def toggleAnswerVote(connection: sqlite3.Connection, answer_id, user_id):
     cur = connection.cursor()
     cur.execute(
         "SELECT * FROM user_answer_votes WHERE answer_id=? AND user_id=?",
@@ -319,7 +319,25 @@ def addVote(connection: sqlite3.Connection, answer_id, user_id):
     )
     previousVote = cur.fetchone()
     if previousVote:
-        return
+        cur.execute("UPDATE answers SET votes = votes - 1 WHERE id=?", (answer_id,))
+        cur.execute(
+            "DELETE FROM user_answer_votes WHERE answer_id=? AND user_id=?",
+            (answer_id, user_id),
+        )
+        cur.execute("SELECT * FROM answers WHERE id=?", (answer_id,))
+        answer = cur.fetchone()
+        answered_by = getUserWithDiscordId(connection, answer[2])
+        answer = {
+            "id": answer[0],
+            "answer": answer[1],
+            "answered_by": answered_by,
+            "votes": answer[3],
+            "answered_date": answer[4],
+            "user_has_voted": False,
+        }
+        connection.commit()
+        cur.close()
+        return answer
     cur.execute("UPDATE answers SET votes = votes + 1 WHERE id=?", (answer_id,))
     cur.execute(
         "INSERT into user_answer_votes (answer_id, user_id) VALUES (?, ?)",

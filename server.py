@@ -2,7 +2,7 @@ from collections import UserDict
 import sqlite3
 import os
 from databaseconfig import (
-    addVote,
+    toggleAnswerVote,
     createAnswer,
     createUser,
     getAnswersForQuestion,
@@ -126,13 +126,13 @@ def submitAnswerToQuestion(id):
     return jsonify(answer)
 
 
-@app.route("/api/answer/upvote/<int:answer_id>", methods=["POST"])
-def upvoteItem(answer_id):
+@app.route("/api/answer/togglevote/<int:answer_id>", methods=["POST"])
+def toggleVote(answer_id):
     if "DISCORD_USER_ID" not in session:
         return redirect(url_for("home"))
     dbConnection = sqlite3.connect("database.db")
     loggedInUser = session["DISCORD_USER_ID"]
-    answer = addVote(dbConnection, answer_id, loggedInUser)
+    answer = toggleAnswerVote(dbConnection, answer_id, loggedInUser)
     return jsonify(
         {
             "mesage": "Success",
