@@ -18,6 +18,7 @@ pip install -m requirements.txt
 ```
 python server.py
 python bot.py
+python socket_python_server.py
 ```
 
 The server.py manages all the operations for the server and the bot.py contains the code required to run the bot
