@@ -46,8 +46,9 @@
                 </div>
                 {% else %}
                 <div class="haveAnAnswerLoggedIn">
-
-                    Have an Answer for this Question? Write an Answer so others can know
+                    <div style="display: flex; align-items: center;"> 
+                        Have an Answer for this Question? Write an Answer so others can know <div onclick="toggleVotes()" style="margin-left: 10px;" class="button"> Show Votes </div>
+                    </div>
                     <div class="answerWritingArea" >
                         <textarea name="answer" id="textareaAnswer" ></textarea>
                         <button type="submit" class="formSubmitButton" id="formSubmitButton"> Submit Your Answer </button>
@@ -76,8 +77,17 @@
         const answersList = document.getElementById('answersList');
         const loadingComponent = document.getElementById('loadingBox');
         const userIsAuthenitcated = "{{ data['auth_user'] }}" != "None";
-        console.log(userIsAuthenitcated);
+        var showingVotes = false;
         var answers = [];
+
+        function toggleVotes() {
+            const votesElements = document.getElementsByClassName('answer-votes');
+            console.log(votesElements);
+            showingVotes = !showingVotes;
+            for (const child of votesElements) {
+                child.style.display = showingVotes ? "flex" : "none"  ;
+            }
+        }
 
         function updateMessages() {
             var htmlContent = "";
@@ -107,7 +117,7 @@
             const newElement = document.createElement("div");
             newElement.innerHTML = `
                 <div class="answer">
-                    <div class="answer-votes" onclick="upVoteAnswer(${answers.indexOf(answer)})" > 
+                    <div class="answer-votes" onclick="upVoteAnswer(${answers.indexOf(answer)})" style="display: ${ showingVotes ? 'flex' : 'none'}" > 
                         <i  class="fas fa-caret-up caret-up-icon ${ answer.user_has_voted ? "blue-color-icon" : '' }"></i>
                         ${answer.votes}
                     </div>

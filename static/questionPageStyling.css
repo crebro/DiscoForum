@@ -107,3 +107,16 @@
 .blue-color-icon {
   color: #5865f2;
 }
+
+.button {
+  background-color: #5865f2;
+  color: white;
+  padding: 5px 10px 5px 10px;
+  border-radius: 10px;
+  transition-duration: 250ms;
+}
+
+.button:hover {
+  cursor: pointer;
+  background-color: #3644dd;
+}
