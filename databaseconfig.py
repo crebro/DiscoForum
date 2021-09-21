@@ -1,9 +1,6 @@
 from collections import UserDict
 import sqlite3
 import datetime
-from sqlite3.dbapi2 import Cursor
-from typing import Tuple
-from discord.message import convert_emoji_reaction
 from dotenv import dotenv_values
 
 config = dotenv_values(".env")
@@ -122,6 +119,7 @@ def getServerPrefix(connection: sqlite3.Connection, server_id):
 
 def updateServerPrefix(connection: sqlite3.Connection, server_id, server_prefix):
     cur = connection.cursor()
+    print(server_prefix, server_id)
     cur.execute(
         """
         UPDATE servers
@@ -214,9 +212,7 @@ def searchQuestionsInDatabase(connection: sqlite3.Connection, query, serverId):
             "question": question[1],
             "server_id": question[2],
             "asked_by": question[3],
-            "asked_date": datetime.datetime.strptime(
-                question[4], config["DATETIME_FORMAT"]
-            ),
+            "asked_date": question[4],
         }
 
     return list(map(mapQuestions, questions))

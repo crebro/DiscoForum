@@ -1,16 +1,19 @@
-from collections import UserDict
 import sqlite3
 import os
 from databaseconfig import (
+    addServerRow,
+    createQuestion,
+    getServerPrefix,
+    searchQuestionsInDatabase,
     toggleAnswerVote,
     createAnswer,
     createUser,
     getAnswersForQuestion,
     getQuestion,
+    updateServerPrefix,
 )
 from flask import (
     Flask,
-    json,
     render_template,
     redirect,
     url_for,
@@ -18,6 +21,7 @@ from flask import (
     request,
     jsonify,
 )
+from functools import wraps
 from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from dotenv import dotenv_values
 import requests
@@ -42,6 +46,20 @@ app.config["DISCORD_REDIRECT_URI"] = config["SERVER_ADDRESS"] + "/successful_log
 app.config["DISCORD_BOT_TOKEN"] = config["TOKEN"]
 
 discord = DiscordOAuth2Session(app)
+
+
+def validateRequestsFromBot(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        if (
+            "validation" in request.headers
+            and request.headers.get("validation") == config["SECRET_KEY"]
+        ):
+            return function(*args, **kwargs)
+        else:
+            return redirect(url_for("home"))
+
+    return wrapper
 
 
 def getDiscordUser(id):
@@ -139,6 +157,60 @@ def toggleVote(answer_id):
             "answer": answer,
         }
     )
+
+
+@app.route("/api/servers/create/<int:server_id>", methods=["POST"])
+@validateRequestsFromBot
+def addServer(server_id):
+    dbConnection = sqlite3.connect("database.db")
+    addServerRow(dbConnection, server_id, ".")
+    return jsonify({"message": "Success adding server to database"})
+
+
+@app.route("/api/server/updateprefix/<int:server_id>", methods=["POST"])
+@validateRequestsFromBot
+def updateServerPrefixFromDatabase(server_id):
+    dbConnection = sqlite3.connect("database.db")
+    data = request.get_json()
+    updateServerPrefix(dbConnection, server_id, data["prefix"])
+    return jsonify({"message": "success updating server prefix"})
+
+
+@app.route("/api/server/<int:server_id>")
+@validateRequestsFromBot
+def getServerPrefixFromDatabase(server_id):
+    dbConnection = sqlite3.connect("database.db")
+    prefix = getServerPrefix(dbConnection, server_id=server_id)
+    return jsonify({"message": "Success getting the server prefix", "prefix": prefix})
+
+
+@app.route("/api/questions/search/<string:query>/<int:server_id>")
+@validateRequestsFromBot
+def searchQuestions(query, server_id):
+    dbConncection = sqlite3.connect("database.db")
+    questions = searchQuestionsInDatabase(dbConncection, query, serverId=server_id)
+    return jsonify(questions)
+
+
+@app.route("/api/questions/create", methods=["POST"])
+@validateRequestsFromBot
+def createAQuestion():
+    dbConnection = sqlite3.connect("database.db")
+    data = request.get_json()
+    if (
+        ("question" not in data)
+        or ("asked_by" not in data)
+        or ("server_id" not in data)
+    ):
+        return redirect(url_for("home"))
+    questionId = createQuestion(
+        dbConnection,
+        question=data["question"],
+        asked_by=data["asked_by"],
+        server_id=data["server_id"],
+    )
+    data = {"message": "success", "question_id": questionId}
+    return jsonify(data)
 
 
 @app.route("/recieve_session")
