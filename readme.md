@@ -2,6 +2,10 @@
 
 DiscoForum is a discord bot that allows you to ask and get questions answered through he means of discord
 
+### Context
+
+DiscoForum was created before discord forums were introduced. This bot allows users to create discussion topics on discord and discuss on them on a different web platform.
+
 ## How to run
 
 - Step 1: Run the following commands
